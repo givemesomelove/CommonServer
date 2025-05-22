@@ -1,8 +1,10 @@
 const express = require('express');
 const http = require('http');
-const fs = require('fs');
 const WebSocket = require('ws');
 const cors = require('cors');
+const config = require('./config/config.js');
+
+console.log("环境配置", config);
 
 const app = express();
 
