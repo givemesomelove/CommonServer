@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <button onclick="testGet()">Test GET</button>
+    <hr>
+    <button onclick="testWebSocket()">Test WebSocket</button>
+
+    <script>
+        // HTTPS 调用接口
+        async function testGet() {
+            try {
+                const response = await fetch(`${window.location.origin}/api/status`);
+                const data = await response.json();
+                console.log('接口GET返回:', data);
+            } catch (error) {
+                console.error('接口GET调用失败:', error);
+            }
+        }
+
+        let socket = null;
+        function testWebSocket() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                console.log('WebSocket已连接');
+                socket.send('你好，我是客户端');
+                return;
+            }
+
+            let wsProtocal = 'wss';
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                wsProtocal = 'ws';
+            }
+            socket = new WebSocket(`${wsProtocal}://${window.location.host}`);
+            console.log('WebSocket连接中...', socket);
+
+            socket.onopen = () => {
+                console.log('WebSocket已连接');
+                socket.send('你好，我是客户端');
+            }
+
+            socket.onmessage = (event) => {
+                console.log('收到服务端消息:', event.data);
+            }
+
+            socket.onerror = (err) => {
+                console.error('WebSocket错误:', err);
+            };
+        }
+    </script>
+</body>
+
+</html>
