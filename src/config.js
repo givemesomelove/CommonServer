@@ -4,7 +4,7 @@ const path = require('path');
 // 根据环境加载对应的 .env文件
 const envFile = `.env.${process.env.NODE_ENV || 'developement'}`;
 dotenv.config({
-    path: path.resolve(__dirname, `env/${envFile}`)
+    path: path.resolve(__dirname, `../env/${envFile}`)
 });
 
 /// 主配置对象
@@ -19,6 +19,7 @@ module.exports = {
     server: {
         port: parseInt(process.env.SERVER_PORT, 10) || 3000,
         host: process.env.SERVER_HOST || 'localhost',
+        jwt: process.env.JWT_SECRET,
     },
 
     /// 数据库配置

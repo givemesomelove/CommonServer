@@ -15,4 +15,4 @@ ENV NODE_ENV=production
 
 EXPOSE 80
 
-CMD ["node", "server.js"]
+CMD ["node", "app.js"]
