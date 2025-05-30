@@ -5,15 +5,17 @@ const cors = require("cors");
 const morgan = require("morgan");
 const compression = require("compression");
 
-const { initSequelize } = require("./db/db.js");
 const { initRoutes } = require("./http/route.js");
 const initWebSockets = require("./websocket/websocket.js");
+const db = require("./db/db.js")
+
+/// 全局引入
+global.myLog = require("./log.js");
 
 /// 初始化数据库
-initSequelize();
+db.connect();
 
 const app = express();
-
 /// 压缩
 app.use(compression());
 /// 跨域
@@ -31,7 +33,7 @@ app.use(express.json());
 initRoutes(app);
 /// websocket初始化
 const server = http.createServer(app);
-initWebSockets(server);
+// initWebSockets(server);
 
 /// 全局错误处理
 app.use((err, req, res, next) => {

@@ -24,11 +24,6 @@ const defineModel = (sequelize, dataTypes) => {
                 allowNull: false,
                 defaultValue: 4, // 默认需要的玩家数量
             },
-            palyers: {
-                type: dataTypes.JSON,
-                allowNull: false,
-                defaultValue: [], // 默认当前玩家数量
-            },
             status: {
                 type: dataTypes.INTEGER,
                 allowNull: false,

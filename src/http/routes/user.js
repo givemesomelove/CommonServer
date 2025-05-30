@@ -1,24 +1,24 @@
 const express = require("express");
-const { createToken } = require("../../auth.js");
-const { models } = require("../../db/db.js");
+const { createToken, httpAuth } = require("../../auth.js");
 const bcrypt = require("bcrypt");
-const { httpAuth } = require("../../auth.js");
-const User = models.User;
+const userService = require("../service/UserService")
 
 const router = express.Router();
 /// 用户注册
 router.post("/register", async (req, res) => {
     try {
-        /// 判空
-        const { username, password } = req.body;
-        if (!username || !password) throw new Error(`用户名或者密码不能为空`);
+        const result = await userService.registerUser(req.body);
 
-        /// 校验用户名是否存在
-        const existingUser = await User.findOne({ where: { username } });
-        if (existingUser) throw new Error(`用户名已存在`);
+        if (result.success) {
+            res.status(201).json({
+                userId: result.userId
+            });
+        } else {
+            res.status(400).json({
+                error: result.error
+            });
+        }
 
-        /// 新用户入库
-        const user = await User.create(req.body);
         res.status(201).json(user);
     } catch (err) {
         res.status(400).json({error: err.message});

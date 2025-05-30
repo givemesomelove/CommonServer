@@ -1,49 +1,70 @@
-const { Sequelize } = require("sequelize");
+const { MongoClient } = require("mongodb");
 const config = require("../config.js");
-const fs = require("fs");
-const path = require("path");
+const myLog = require("../log.js");
 
-const sequelize = new Sequelize(
-    process.env.DB_NAME,
-    process.env.DB_USER,
-    process.env.DB_PASSWORD,
-    {
-        host: process.env.DB_HOST,
-        port: process.env.DB_PORT,
-        dialect: "mysql",
-        logging: process.env.DEBUG === "true" ? console.log : false,
+class DB {
+    constructor() {
+        this.client = null;
+        this.db = null;
+        this.isConnected = false;
+        this.models = {};
     }
-);
-
-const models = [];
-const modelsPath = path.join(__dirname, "models");
-
-/// 加载所有模型
-const Room = require("./room")(sequelize, DataTypes);
-models[Room.name] = Room;
-
-const User = require("./user")(sequelize, DataTypes);
-models[User.name] = User;
-
-const RoomPlayer = require("./roomPlayer")(sequelize, DataTypes);
-models[RoomPlayer.name] = RoomPlayer;
-
-/// 关联模型
-
-// 房间与玩家的多对多关系
-Room.belongsToMany(Player, { through: RoomPlayer, foreignKey: "roomId" });
-Player.belongsToMany(Room, { through: RoomPlayer, foreignKey: "playerId" });
-
-/// 初始化启动
-const initSequelize = async () => {
-    try {
-        await sequelize.authenticate();
-        console.log("数据库连接成功");
-        await sequelize.sync({ alter: true });
-        console.log("数据库同步成功");
-    } catch (error) {
-        console.error("数据库连接失败", error);
+    /// 单例模式
+    static getInstance() {
+        if (!DB.instance) {
+            DB.instance = new DB();
+        }
+        return DB.instance;
     }
+
+    /// 连接数据库
+    async connect() {
+        if (this.isConnected) return this.db;
+
+        try {
+            myLog.wait("正在连接数据库...");
+
+            const url = `mongodb://${config.database.host}:${config.database.port}/`
+            this.client = new MongoClient(url, {});
+
+            await this.client.connect();
+            this.db = this.client.db(config.database.dbName);
+
+            /// 验证连接
+            await this.db.command({ ping: 1 });
+            this.isConnected = true;
+            myLog.success("数据库连接成功");
+
+            /// 初始化模型
+            await this.initModels();
+
+            return this.db;
+        } catch (error) {
+            myLog.error("数据库连接失败:", error)
+            /// 终止服务器项目
+            process.exit(1);
+        }
+    }
+
+    /// 初始化模型
+    async initModels() {
+        /// 用户表
+        const UserDB = require("./models/userDB.js");
+        this.models.User = new UserDB(this.db);
+
+        myLog.finish("初始化数据库模型完成");
+    }
+
+    /// 断开数据库连接
+    async close() {
+        if (this.client) {
+            await this.client.close();
+            this.isConnected = false;
+            myLog.stop("数据库连接已关闭");
+        }
+    }
+
+
 }
 
-module.exports = { initSequelize, models };
+module.exports = DB.getInstance();
